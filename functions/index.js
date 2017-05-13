@@ -8,16 +8,9 @@ admin.initializeApp(functions.config().firebase);
 
 exports.resolveBookLocation = functions.database.ref('/books/{bookKey}')
     .onWrite((event) => {
-      const placesRef = functions.database.ref(`places/${event.params.bookKey}`);
-      const location = [];
-
-      if (event.data.previous.exists()) {
-        location.push(...event.data.previous.val());
-      }
-
-      if (!event.data.exists()) {
-        return placesRef.remove();
-      }
+      const placesRef = admin.database().ref(`/places/${event.params.bookKey}`);
+      let location = '';
+      let error = {};
 
       const book = event.data.val();
 
@@ -25,9 +18,15 @@ exports.resolveBookLocation = functions.database.ref('/books/{bookKey}')
         address: book.position,
       }, (err, response) => {
         if (!err) {
-          location.push(response.json.geometry.location);
+          location = response.json.geometry.location;
+        } else {
+          error = err;
         }
       });
 
-      return placesRef.set(location);
+      if (location.length !== 0) {
+        return placesRef.child(book.position).set(location);
+      }
+
+      return Promise.reject(error);
     });
