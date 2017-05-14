@@ -6,16 +6,18 @@ const mapsClient = require('@google/maps').createClient({
 
 admin.initializeApp(functions.config().firebase);
 
-exports.resolveBookLocation = functions.database.ref('/books/{bookKey}')
+exports.resolveBookLocation = functions.database.ref('/books/{city}/{bookKey}')
     .onWrite((event) => {
-      const placesRef = admin.database().ref(`/places/${event.params.bookKey}`);
+      const key = event.params.bookKey;
+      const placesRef = admin.database().ref(`/places/${key}`);
       let location = {};
       let error = new Error();
 
       const book = event.data.val();
+      const rawPosition = book.position;
 
       mapsClient.geocode({
-        address: book.position,
+        address: rawPosition,
       }, (err, response) => {
         if (!err) {
           location = response.json.results[0].geometry.location;
@@ -24,8 +26,8 @@ exports.resolveBookLocation = functions.database.ref('/books/{bookKey}')
         }
       });
 
-      if (location) {
-        return placesRef.child(book.position).set(location);
+      if (location !== undefined) {
+        return placesRef.child(rawPosition).set(location);
       }
 
       return Promise.reject(error);
