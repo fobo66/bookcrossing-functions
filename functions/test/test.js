@@ -6,7 +6,7 @@ const sinon = require('sinon');
 const assert = chai.assert;
 chai.use(chaiAsPromised);
 
-describe('Retrieving book location', () => {
+describe('Cloud Functions:', () => {
   let myFunctions,
     configStub,
     adminInitStub,
@@ -32,10 +32,28 @@ describe('Retrieving book location', () => {
   });
 
   describe('resolveBookLocation', () => {
+    it('should resolve latlng', () => {
+      const mapsClient = require('@google/maps').createClient({
+        key: 'AIzaSyAbKJO_8xquY3FzGBNIGtigMV3DBGqaWqM',
+      });
+
+      mapsClient.geocode({
+        address: 'Brooklyn',
+      }, (err, response) => {
+        assert.eventually.isNull(err);
+        assert.eventually.isNotNull(response);
+        assert.eventually.isArray(response.json.results);
+        assert.eventually.isDefined(response.json.results[0].geometry.location);
+      }
+      );
+    });
+
     it('should create new reference for every change of the location', () => {
       const fakeEvent = {
         data: new functions.database.DeltaSnapshot(null, null, null, {
-          position: 'Grand St/Bedford Av, Brooklyn, NY 11211, США',
+          book: {
+            position: 'Grand St/Bedford Av, Brooklyn, NY 11211, США',
+          }
         }),
         params: {
           bookKey: 'book',
@@ -53,7 +71,7 @@ describe('Retrieving book location', () => {
       const databaseStub = sinon.stub(admin, 'database');
 
       setStub.withArgs(setArg).returns(true);
-      childStub.withArgs('Grand St/Bedford Av, Brooklyn, NY 11211, США').returns({ set: setStub });
+      childStub.withArgs('Brooklyn').returns({ set: setStub });
       refStub.withArgs('/places/book').returns({ child: childStub });
       Object.defineProperty(fakeEvent.data, 'ref', { get: refStub });
       databaseStub.returns({ ref: refStub });
