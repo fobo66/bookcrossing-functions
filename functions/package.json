@@ -4,6 +4,7 @@
   "description": "Cloud Functions for Bookcrossing Mobile project",
   "dependencies": {
     "@google/maps": "^0.3.1",
+    "es6-promisify": "^5.0.0",
     "firebase-admin": "^4.1.2",
     "firebase-functions": "^0.5"
   },
@@ -19,6 +20,6 @@
     "sinon": "^2.2.0"
   },
   "scripts": {
-    "test": "./node_modules/.bin/mocha --reporter spec"
+    "test": "./node_modules/.bin/mocha -R spec --ui bdd"
   }
 }

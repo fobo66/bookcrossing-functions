@@ -1,34 +1,39 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const promisify = require('es6-promisify');
 const mapsClient = require('@google/maps').createClient({
-  key: 'AIzaSyAbKJO_8xquY3FzGBNIGtigMV3DBGqaWqM',
+  key: functions.config().maps.key,
 });
 
 admin.initializeApp(functions.config().firebase);
 
+const geocode = promisify(mapsClient.geocode, {
+  thisArg: mapsClient,
+});
+
+const findPlace = promisify(mapsClient.places, {
+  thisArg: mapsClient,
+});
+
 exports.resolveBookLocation = functions.database.ref('/books/{city}/{bookKey}')
     .onWrite((event) => {
       const key = event.params.bookKey;
+      const city = event.params.city;
       const placesRef = admin.database().ref(`/places/${key}`);
-      let location = {};
-      let error = new Error();
 
       const book = event.data.val();
       const rawPosition = book.position;
 
-      mapsClient.geocode({
-        address: rawPosition,
-      }, (err, response) => {
-        if (!err) {
-          location = response.json.results[0].geometry.location;
-        } else {
-          error = err;
-        }
+      return geocode({
+        address: city,
+      })
+      .then(response => findPlace({
+        query: rawPosition,
+        location: response.json.results[0].geometry.location,
+        radius: 10000,
+      })
+      ).then((response) => {
+        const location = response.json.results[0].geometry.location;
+        return placesRef.set(location);
       });
-
-      if (location !== undefined) {
-        return placesRef.child(rawPosition).set(location);
-      }
-
-      return Promise.reject(error);
     });
