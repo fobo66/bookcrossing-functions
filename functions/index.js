@@ -15,25 +15,33 @@ const findPlace = promisify(mapsClient.places, {
   thisArg: mapsClient,
 });
 
-exports.resolveBookLocation = functions.database.ref('/books/{city}/{bookKey}')
+exports.resolveBookLocation = functions.database.ref('/books/{bookKey}')
     .onWrite((event) => {
       const key = event.params.bookKey;
-      const city = event.params.city;
       const placesRef = admin.database().ref(`/places/${key}`);
+      const placesHistoryRef = admin.database().ref(`/placesHistory/${key}`);
 
-      const book = event.data.val();
-      const rawPosition = book.position;
+      if (event.data.exists()) {
+        const book = event.data.val();
+        const city = book.city;
+        const rawPosition = book.positionName;
 
-      return geocode({
-        address: city,
-      })
-      .then(response => findPlace({
-        query: rawPosition,
-        location: response.json.results[0].geometry.location,
-        radius: 10000,
-      })
-      ).then((response) => {
-        const location = response.json.results[0].geometry.location;
-        return placesRef.set(location);
-      });
+        return geocode({
+          address: city,
+        })
+        .then(response => findPlace({
+          query: rawPosition,
+          location: response.json.results[0].geometry.location,
+          radius: 10000,
+        })
+        ).then((response) => {
+          const location = response.json.results[0].geometry.location;
+          event.data.ref.child('position').set(location);
+          placesHistoryRef.child(`${city}, ${rawPosition}`).set(location);
+          return placesRef.set(location);
+        });
+      }
+
+      return placesRef.remove()
+      .then(() => placesHistoryRef.remove());
     });
