@@ -22,6 +22,9 @@ describe('Cloud Functions:', () => {
         databaseURL: 'https://not-a-project.firebaseio.com',
         storageBucket: 'not-a-project.appspot.com',
       },
+      maps: {
+        key: 'AIzaSyAbKJO_8xquY3FzGBNIGtigMV3DBGqaWqM',
+      },
     });
     myFunctions = require('../index');
   });
@@ -32,28 +35,14 @@ describe('Cloud Functions:', () => {
   });
 
   describe('resolveBookLocation', () => {
-    it('should resolve latlng', () => {
-      const mapsClient = require('@google/maps').createClient({
-        key: 'AIzaSyAbKJO_8xquY3FzGBNIGtigMV3DBGqaWqM',
-      });
-
-      mapsClient.geocode({
-        address: 'Brooklyn',
-      }, (err, response) => {
-        assert.eventually.isNull(err);
-        assert.eventually.isNotNull(response);
-        assert.eventually.isArray(response.json.results);
-        assert.eventually.isDefined(response.json.results[0].geometry.location);
-      }
-      );
-    });
 
     it('should create new reference for every change of the location', () => {
       const fakeEvent = {
         data: new functions.database.DeltaSnapshot(null, null, null, {
           book: {
-            position: 'Grand St/Bedford Av, Brooklyn, NY 11211, США',
-          }
+            positionName: 'Googleplex',
+            city: 'Mountain View',
+          },
         }),
         params: {
           bookKey: 'book',

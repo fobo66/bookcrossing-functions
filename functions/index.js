@@ -45,3 +45,26 @@ exports.resolveBookLocation = functions.database.ref('/books/{bookKey}')
       return placesRef.remove()
       .then(() => placesHistoryRef.remove());
     });
+
+exports.stashedBooksNotifications = functions.database.ref('/books/{bookKey}/free')
+  .onWrite((event) => {
+    const key = event.params.bookKey;
+    const payload = {
+      data: {
+        key,
+      },
+      notification: {
+        titleLocKey: '',
+        bodyLocKey: '',
+      },
+    };
+    if (event.data.val() === true && event.data.previous.val() === false) {
+      payload.notification.titleLocKey = 'stash_notification_title_acquired';
+      payload.notification.bodyLocKey = 'stash_notification_body_acquired';
+    } else if (event.data.val() === false && event.data.previous.val() === true) {
+      payload.notification.titleLocKey = 'stash_notification_title_free';
+      payload.notification.bodyLocKey = 'stash_notification_body_free';
+    }
+
+    return admin.messaging().sendToTopic(key, payload);
+  });
