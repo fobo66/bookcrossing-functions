@@ -4,6 +4,8 @@
   "description": "Cloud Functions for Bookcrossing Mobile project",
   "dependencies": {
     "@google/maps": "^0.4.1",
+    "algolia-firebase-functions": "^0.1.1",
+    "algoliasearch": "^3.24.0",
     "es6-promisify": "^5.0.0",
     "firebase-admin": "^5.0.0",
     "firebase-functions": "^0.5.7"

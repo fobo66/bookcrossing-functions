@@ -5,6 +5,13 @@ const mapsClient = require('@google/maps').createClient({
   key: functions.config().maps.key,
 });
 
+const algoliasearch = require('algoliasearch');
+const algoliaFunctions = require('algolia-firebase-functions');
+
+const algolia = algoliasearch(functions.config().algolia.app,
+                              functions.config().algolia.key);
+const index = algolia.initIndex(functions.config().algolia.index);
+
 admin.initializeApp(functions.config().firebase);
 
 const geocode = promisify(mapsClient.geocode, {
@@ -68,3 +75,7 @@ exports.stashedBooksNotifications = functions.database.ref('/books/{bookKey}/fre
 
     return admin.messaging().sendToTopic(key, payload);
   });
+
+exports.syncAlgoliaWithFirebase = functions.database.ref('/books/{bookKey}').onWrite(
+  event => algoliaFunctions.syncAlgoliaWithFirebase(index, event)
+);
