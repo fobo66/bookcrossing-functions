@@ -1,8 +1,8 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const promisify = require('es6-promisify');
 const mapsClient = require('@google/maps').createClient({
   key: functions.config().maps.key,
+  Promise: Promise
 });
 
 const algoliasearch = require('algoliasearch');
@@ -12,38 +12,32 @@ const algolia = algoliasearch(functions.config().algolia.app,
                               functions.config().algolia.key);
 const index = algolia.initIndex(functions.config().algolia.index);
 
-admin.initializeApp(functions.config().firebase);
-
-const geocode = promisify(mapsClient.geocode, {
-  thisArg: mapsClient,
-});
-
-const findPlace = promisify(mapsClient.places, {
-  thisArg: mapsClient,
-});
+admin.initializeApp();
 
 exports.resolveBookLocation = functions.database.ref('/books/{bookKey}')
-    .onWrite((event) => {
-      const key = event.params.bookKey;
+    .onWrite((data, context) => {
+      const key = context.params.bookKey;
       const placesRef = admin.database().ref(`/places/${key}`);
       const placesHistoryRef = admin.database().ref(`/placesHistory/${key}`);
 
-      if (event.data.exists()) {
-        const book = event.data.val();
+      if (data.after.exists()) {
+        const book = data.after.val();
         const city = book.city;
         const rawPosition = book.positionName;
 
-        return geocode({
+        return mapsClient.geocode({
           address: city,
         })
-        .then(response => findPlace({
+        .asPromise()
+        .then(response => mapsClient.places({
           query: rawPosition,
           location: response.json.results[0].geometry.location,
           radius: 10000,
         })
+        .asPromise()
         ).then((response) => {
           const location = response.json.results[0].geometry.location;
-          event.data.ref.child('position').set(location);
+          data.ref.child('position').set(location);
           placesHistoryRef.child(`${city}, ${rawPosition}`).set(location);
           return placesRef.set(location);
         });
@@ -54,8 +48,8 @@ exports.resolveBookLocation = functions.database.ref('/books/{bookKey}')
     });
 
 exports.stashedBooksNotifications = functions.database.ref('/books/{bookKey}/free')
-  .onWrite((event) => {
-    const key = event.params.bookKey;
+  .onWrite((change, context) => {
+    const key = context.params.bookKey;
     const payload = {
       data: {
         key,
@@ -65,10 +59,10 @@ exports.stashedBooksNotifications = functions.database.ref('/books/{bookKey}/fre
         bodyLocKey: '',
       },
     };
-    if (event.data.val() === true && event.data.previous.val() === false) {
+    if (change.after.val() === true && change.before.val() === false) {
       payload.notification.titleLocKey = 'stash_notification_title_acquired';
       payload.notification.bodyLocKey = 'stash_notification_body_acquired';
-    } else if (event.data.val() === false && event.data.previous.val() === true) {
+    } else if (change.after.val() === false && change.before.val() === true) {
       payload.notification.titleLocKey = 'stash_notification_title_free';
       payload.notification.bodyLocKey = 'stash_notification_body_free';
     }
@@ -77,5 +71,5 @@ exports.stashedBooksNotifications = functions.database.ref('/books/{bookKey}/fre
   });
 
 exports.syncAlgoliaWithFirebase = functions.database.ref('/books/{bookKey}').onWrite(
-  event => algoliaFunctions.syncAlgoliaWithFirebase(index, event)
+  (change, context) => algoliaFunctions.syncAlgoliaWithFirebase(index, change)
 );
