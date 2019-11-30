@@ -7,23 +7,23 @@
   },
   "dependencies": {
     "@google/maps": "^0.5.5",
-    "algolia-firebase-functions": "^3.0.0",
-    "algoliasearch": "^3.33.0",
+    "algolia-firebase-functions": "^3.2.0",
+    "algoliasearch": "^3.35.1",
     "es6-promisify": "^5.0.0",
     "firebase-admin": "8.3.0",
-    "firebase-functions": "^3.2.0"
+    "firebase-functions": "^3.3.0"
   },
   "private": true,
   "devDependencies": {
-    "@types/chai": "^4.0.0",
-    "@types/google__maps": "^0.5.6",
+    "@types/chai": "^4.2.5",
+    "@types/google__maps": "^0.5.8",
     "chai": "^4.0.2",
     "chai-as-promised": "^7.0.0",
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^11.3.2",
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-promise": "^4.2.1",
-    "mocha": "^6.2.0",
+    "mocha": "^6.2.2",
     "sinon": "^2.3.5"
   },
   "scripts": {
