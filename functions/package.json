@@ -23,10 +23,18 @@
     "eslint-config-airbnb-base": "^11.3.2",
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-promise": "^4.2.1",
+    "firebase-functions-test": "^0.1.6",
     "mocha": "^6.2.2",
     "sinon": "^2.3.5"
   },
   "scripts": {
-    "test": "./node_modules/.bin/mocha -R spec --ui bdd"
+    "lint": "eslint .",
+    "ci-test": "npm install && npm run test",
+    "test": "mocha --reporter spec test/test.js --exit",
+    "serve": "firebase serve --only functions",
+    "shell": "firebase experimental:functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
   }
 }

@@ -6,48 +6,45 @@ const sinon = require('sinon');
 const assert = chai.assert;
 chai.use(chaiAsPromised);
 
-describe('Cloud Functions:', () => {
-  let myFunctions,
-    configStub,
-    adminInitStub,
-    functions,
-    admin;
+const admin = require('firebase-admin');
+const functions = require('firebase-functions-test')();
 
-  before(() => {
-    admin = require('firebase-admin');
-    adminInitStub = sinon.stub(admin, 'initializeApp');
-    functions = require('firebase-functions');
-    configStub = sinon.stub(functions, 'config').returns({
-      firebase: {
-        databaseURL: 'https://not-a-project.firebaseio.com',
-        storageBucket: 'not-a-project.appspot.com',
+describe('Cloud Functions for Bookcrossing Mobile', () => {
+  let myFunctions,
+    databaseStub,
+    adminInitStub;
+
+  beforeEach(() => {
+    functions.mockConfig({
+      algolia: {
+        app: 'app',
+        key: 'key',
+        index: 'test_books'
       },
       maps: {
-        key: 'AIzaSyAbKJO_8xquY3FzGBNIGtigMV3DBGqaWqM',
-      },
+        key: 'key'
+      }
     });
+    adminInitStub = sinon.stub(admin, 'initializeApp');
+    databaseStub = sinon.stub(admin, 'database')
+    .get(() => { 
+      return function() { 
+          return 'data';
+        }
+      });
     myFunctions = require('../index');
   });
 
   after(() => {
-    configStub.restore();
     adminInitStub.restore();
-  });
+    databaseStub.restore();
+    functions.cleanup();
+  })
 
   describe('resolveBookLocation', () => {
 
     it('should create new reference for every change of the location', () => {
-      const fakeEvent = {
-        data: new functions.database.DeltaSnapshot(null, null, null, {
-          book: {
-            positionName: 'Googleplex',
-            city: 'Mountain View',
-          },
-        }),
-        params: {
-          bookKey: 'book',
-        },
-      };
+      const resolveBookLocation = functions.wrap(myFunctions.resolveBookLocation);
 
       const refStub = sinon.stub();
       const childStub = sinon.stub();
@@ -57,15 +54,23 @@ describe('Cloud Functions:', () => {
         lng: -73.961452,
       };
 
-      const databaseStub = sinon.stub(admin, 'database');
-
       setStub.withArgs(setArg).returns(true);
       childStub.withArgs('Brooklyn').returns({ set: setStub });
       refStub.withArgs('/places/book').returns({ child: childStub });
-      Object.defineProperty(fakeEvent.data, 'ref', { get: refStub });
-      databaseStub.returns({ ref: refStub });
+      databaseStub.returns({ ref: () => refStub });
 
-      return assert.eventually.equal(myFunctions.resolveBookLocation(fakeEvent), true);
+      const fakeData = functions.database.makeDataSnapshot({
+        book: {
+          positionName: 'Googleplex',
+          city: 'Mountain View',
+        },
+        auth: {
+          uid: 'jckS2Q0'
+        },
+        authType: 'USER'
+      }, '/books/book');
+
+      return assert.equal(resolveBookLocation(fakeData), true);
     });
   });
 });
