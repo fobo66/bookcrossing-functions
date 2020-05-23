@@ -7,22 +7,22 @@
   },
   "dependencies": {
     "algolia-firebase-functions": "^3.3.0",
-    "algoliasearch": "^3.35.1",
-    "firebase-admin": "8.3.0",
+    "algoliasearch": "^4.2.0",
+    "firebase-admin": "8.12.1",
     "firebase-functions": "^3.6.1"
   },
   "private": true,
   "devDependencies": {
     "@types/chai": "^4.2.11",
-    "chai": "^4.0.2",
-    "chai-as-promised": "^7.0.0",
-    "eslint": "^4.19.1",
-    "eslint-config-airbnb-base": "^11.3.2",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "eslint": "^7.1.0",
+    "eslint-config-airbnb-base": "^14.1.0",
     "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-promise": "^4.2.1",
-    "firebase-functions-test": "^0.1.7",
-    "mocha": "^6.2.3",
-    "sinon": "^2.3.5"
+    "firebase-functions-test": "^0.2.1",
+    "mocha": "^7.2.0",
+    "sinon": "^9.0.2"
   },
   "scripts": {
     "lint": "eslint .",
